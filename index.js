@@ -7,8 +7,8 @@ const bot = new Telegraf(BOT_TOKEN);
 
 console.log("bot aktif")
 // /start — support grup & pribadi + font stylish
-bot.start(async (ctx) => {
 
+async function startCmd(ctx) {
   const user = ctx.from.first_name || "User"
   const id = ctx.from.id
   const runtime = process.uptime()
@@ -17,10 +17,7 @@ bot.start(async (ctx) => {
   const hours = Math.floor((runtime % 86400) / 3600)
   const minutes = Math.floor((runtime % 3600) / 60)
 
-  await ctx.replyWithPhoto(
-    START_IMAGE_URL,
-    {
-      caption: `
+  const caption = `
 Hallo, ${user} 👋
 
 Selamat Datang Di *Mngpedia automation bot*
@@ -44,37 +41,59 @@ Selamat Datang Di *Mngpedia automation bot*
 
 Silahkan Pilih Produk Yang Tersedia
 Dibawah Ini
-      `,
-      parse_mode: "Markdown",
+  `
 
-      ...Markup.inlineKeyboard([
+  const keyboard = Markup.inlineKeyboard([
 
-        [
-          Markup.button.callback("🛍 Buy Produk", "produk"),
-          Markup.button.callback("🖥 Buy VPS", "vps")
-        ],
+    [
+      Markup.button.callback("🛍 Buy Produk", "produk"),
+      Markup.button.callback("🖥 Buy VPS", "vps")
+    ],
 
-        [
-          Markup.button.callback("💎 Buy Panel", "panel")
-        ],
+    [
+      Markup.button.callback("💎 Buy Panel", "panel")
+    ],
 
-        [
-          Markup.button.callback("📂 Buy Scripts", "script"),
-                    Markup.button.callback("📱 Buy App Prem", "prem")
-        ],
-        
-        [
-          Markup.button.callback("Admin Contact", "owner"),
-        ]
-        /*[
-          Markup.button.callback("⬅️ Kembali", "back"),
-          Markup.button.callback("➡️ Lanjut", "next")
-        ]*/
+    [
+      Markup.button.callback("📂 Buy Scripts", "script"),
+      Markup.button.callback("📱 Buy App Prem", "prem")
+    ],
 
-      ])
-    }
-  )
+    [
+      Markup.button.callback("Admin Contact", "owner"),
+    ]
 
+  ])
+
+  if (ctx.callbackQuery) {
+    await ctx.editMessageMedia(
+      {
+        type: "photo",
+        media: START_IMAGE_URL,
+        caption,
+        parse_mode: "Markdown"
+      },
+      {
+        reply_markup: keyboard.reply_markup
+      }
+    )
+  } else {
+    await ctx.replyWithPhoto(
+      START_IMAGE_URL,
+      {
+        caption,
+        parse_mode: "Markdown",
+        ...keyboard
+      }
+    )
+  }
+}
+bot.start(async (ctx) => {
+  await startCmd(ctx)
+})
+
+bot.command('menu', async (ctx) => {
+  await startCmd(ctx)
 })
 
 bot.on("callback_query", async (ctx) => {
@@ -101,7 +120,7 @@ bot.on("callback_query", async (ctx) => {
               [
                 {
                   text: "⬅️ Back",
-                  callback_data: "start"
+                  callback_data: "menu"
                 }
               ]
             ]
@@ -124,6 +143,12 @@ bot.on("callback_query", async (ctx) => {
     
     case "owner":
       await ctx.answerCbQuery("contact owner")
+    break
+    
+    case "menu": {
+      await ctx.answerCbQuery("Menu")
+      await startCmd(ctx)
+    }
     break
 
   }
