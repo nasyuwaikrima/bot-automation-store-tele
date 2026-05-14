@@ -155,6 +155,92 @@ bot.on("callback_query", async (ctx) => {
 
 })
 
+const Payment = require("./lib/payment");
 
+const payment = new Payment();
+
+bot.command("pay", async (ctx) => {
+
+  const amount = ctx.message.text.split(" ")[1];
+
+  if (!amount) {
+    return ctx.reply("Masukin nominal lah");
+  }
+
+  const pay = await payment.create(amount);
+
+  if (!pay.success) {
+    return ctx.reply(pay.message);
+  }
+
+  // base64 -> buffer
+  const buffer = Buffer.from(
+    pay.qr.replace(/^data:image\/png;base64,/, ""),
+    "base64"
+  );
+console.log(pay)
+  await ctx.replyWithPhoto(
+    { source: buffer },
+    {
+      caption: `
+🧾 Invoice: ${pay.invoice}
+💰 Amount: Rp${pay.amount}
+⏰ Expired: ${pay.expired}
+`,
+      ...Markup.inlineKeyboard([
+        [
+          Markup.button.callback(
+            "Check Status",
+            `cek_${pay.invoice}`
+          )
+        ]
+      ])
+    }
+  );
+
+});
+
+bot.action(/^cek_(.+)$/, async (ctx) => {
+
+  const invoice = ctx.match[1];
+
+  const check = await payment.status(invoice);
+
+  if (!check.success) {
+    return ctx.answerCbQuery("Gagal cek status");
+  }
+
+  let statusText = "UNKNOWN";
+
+  if (check.status === "PENDING") {
+    statusText = "⏳ Pending";
+  }
+
+  if (check.status === "SETTLED") {
+    statusText = "✅ Lunas";
+  }
+
+  if (check.status === "EXPIRED") {
+    statusText = "❌ Expired";
+  }
+
+  await ctx.answerCbQuery(statusText);
+
+  await ctx.editMessageCaption(`
+🧾 Invoice: ${check.invoice}
+💰 Amount: Rp${check.amount}
+📌 Status: ${statusText}
+  `, {
+    reply_markup: Markup.inlineKeyboard([
+      [
+        Markup.button.callback(
+          "Refresh Status",
+          `cek_${check.invoice}`
+        )
+      ]
+    ]).reply_markup
+  });
+
+});
 
 bot.launch();
