@@ -108,27 +108,65 @@ bot.on("callback_query", async (ctx) => {
 
     case "panel":
       await ctx.answerCbQuery("Menu Panel")
-      await ctx.editMessageMedia(
-        {
-          type: "photo",
-          media: "https://picsum.photos/500/302",
-          caption: "💎 LIST PANEL"
-        },
-        {
-          reply_markup: {
-            inline_keyboard: [
-              [
-                {
-                  text: "⬅️ Back",
-                  callback_data: "menu"
-                }
-              ]
-            ]
-          }
-        }
-      )
-    break
+      case "panel":
+  await ctx.answerCbQuery("Menu Panel")
 
+  await ctx.editMessageReplyMarkup({
+    inline_keyboard: [
+      [
+        {
+          text: "📦 Panel Legal",
+          callback_data: "panel_legal"
+        }
+      ],
+      [
+        {
+          text: "📦 Panel Biasa",
+          callback_data: "panel_biasa"
+        }
+      ],
+      [
+        {
+          text: "Back",
+          callback_data: "menu"
+        }
+      ]
+    ]
+  })
+    break
+    
+    case "panel_legal": {
+      await ctx.editMessageReplyMarkup({
+    inline_keyboard: [
+      [
+        {
+          text: "📦 Buy Panel Legal",
+          callback_data: "buy_panel_legal"
+        }
+      ],
+      [
+        {
+          text: "📦 Buy Admin Panel Legal",
+          callback_data: "buy_admin_panel_legal"
+        }
+      ],
+            [
+        {
+          text: "📦 Buy Reseller Legal",
+          callback_data: "buy_reseller_legal"
+        }
+      ],
+      [
+        {
+          text: "Back",
+          callback_data: "panel"
+        }
+      ]
+    ]
+  })
+    }
+    break
+    
     case "script":
       await ctx.answerCbQuery("Menu Script")
     break
