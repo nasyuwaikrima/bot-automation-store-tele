@@ -5,7 +5,13 @@ const {
   menu,
   panel,
   product,
-  buyFormPanelLegal
+  buyFormPanelLegal,
+  panelbiasa,
+  buyFormPanelbiasa,
+  buyPanelLegal,
+  buyPanelLegalOnText,
+  buyPanelbiasaOnText,
+  buyPanelbiasa
 } = require('./lib/module.components')
 
 const bot = new Telegraf(BOT_TOKEN);
@@ -47,8 +53,24 @@ bot.on("callback_query", async (ctx) => {
     }
     break
     
+    case 'batalkan': {
+      await ctx.reply("pembayaran dibatalkan")
+      await ctx.reply(".................")
+      await menu(ctx, Markup, START_IMAGE_URL)
+    }
+    break
+    
     case "buy_panel_legal":
     await buyFormPanelLegal(ctx, session)
+    break
+    
+    case "panel_biasa": {
+      await panelbiasa(ctx)
+    }
+    break
+    
+    case "buy_panel_biasa":
+    await buyFormPanelbiasa(ctx, session)
     break
     
     case "script":
@@ -56,19 +78,41 @@ bot.on("callback_query", async (ctx) => {
     break
     
     case "1gb":
-    case "2gb":
-    case "3gb":
-    case "4gb":
-    case "5gb":
-    case "6gb":
-    case "7gb":
-    case "8gb":
-    case "9gb":
-    case "unli":
+case "2gb":
+case "3gb":
+case "4gb":
+case "5gb":
+case "6gb":
+case "7gb":
+case "8gb":
+case "9gb":
+case "unli": {
 
-      
+  const id = ctx.from.id
+  const ram = ctx.callbackQuery.data
 
+  console.log(session)
+
+  if (!session[id]) return
+
+  switch (session[id].action) {
+
+    case "buy_panel_legal": {
+
+      await buyPanelLegal(ctx, session, ram, Markup)
+}
     break
+    
+    case "buy_panel_biasa": {
+
+      await buyPanelbiasa(ctx, session, ram, Markup)
+}
+    break
+  }
+
+}
+
+break
 
     case "next":
       await ctx.answerCbQuery("Next Page")
@@ -188,30 +232,16 @@ bot.on("text", async (ctx) => {
 
   switch (session[id].action) {
 
-    case "buy_panel_legal":
+    case "buy_panel_legal": {
 
-      const username = ctx.message.text
+      await buyPanelLegalOnText(ctx, session)
+    }
+    break
+    
+    case "buy_panel_biasa": {
 
-      // simpan username
-      session[id].username = username
-
-      await ctx.reply(`Username: ${username}`, {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: "1gb - 2000", callback_data: "1gb" }],
-            [{ text: "2gb - 3000", callback_data: "2gb" }],
-            [{ text: "3gb - 4000", callback_data: "3gb" }],
-            [{ text: "4gb - 5000", callback_data: "4gb" }],
-            [{ text: "5gb - 6000", callback_data: "5gb" }],
-            [{ text: "6gb - 7000", callback_data: "6gb" }],
-            [{ text: "7gb - 8000", callback_data: "7gb" }],
-            [{ text: "8gb - 9000", callback_data: "8gb" }],
-            [{ text: "9gb - 10000", callback_data: "9gb" }],
-            [{ text: "unli - 15000", callback_data: "unli" }],
-            [{ text: "Back", callback_data: "menu" }]
-          ]
-        }
-      })
+      await buyPanelbiasaOnText(ctx, session)
+    }
     break
   }
 })
