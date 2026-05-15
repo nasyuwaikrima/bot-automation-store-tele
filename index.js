@@ -1,114 +1,30 @@
 const { Telegraf, Markup } = require('telegraf');
 const { BOT_TOKEN, REQUIRED_CHANNEL, START_IMAGE_URL, OWNER_ID } = require('./config');
+const {
+  panelLegal,
+  menu,
+  panel,
+  product,
+  buyFormPanelLegal
+} = require('./lib/module.components')
 
 const bot = new Telegraf(BOT_TOKEN);
 
 const session = {}
 
-const prices = {
-  "1gb": 2000,
-  "2gb": 3000,
-  "3gb": 4000,
-  "4gb": 5000,
-  "5gb": 6000,
-  "6gb": 7000,
-  "7gb": 8000,
-  "8gb": 9000,
-  "9gb": 10000,
-  "unli": 15000
-}
 
 //const input = ctx.message.text.split(' ').slice(1).join(' ').trim();
 
 console.log("bot aktif")
 // /start — support grup & pribadi + font stylish
 
-async function startCmd(ctx) {
-  const user = ctx.from.first_name || "User"
-  const id = ctx.from.id
-  const runtime = process.uptime()
 
-  const days = Math.floor(runtime / 86400)
-  const hours = Math.floor((runtime % 86400) / 3600)
-  const minutes = Math.floor((runtime % 3600) / 60)
-
-  const caption = `
-Hallo, ${user} 👋
-
-Selamat Datang Di *Mngpedia automation bot*
-
-━━━━━━━━━━━━━━━
-🤖 *Informasi Profile Bot*
-
-⌁ Runtime: ${days}d ${hours}h ${minutes}m
-⌁ Total User: -
-⌁ Version: 1.0.0 Mngpedia automation
-⌁ Total Transaksi: 146 transaksi
-
-━━━━━━━━━━━━━━━
-🪪 *Informasi Profil Anda*
-
-⌁ ID: ${id}
-⌁ Nama Depan: ${ctx.from.first_name || "-"}
-⌁ Nama Belakang: ${ctx.from.last_name || "-"}
-
-━━━━━━━━━━━━━━━
-
-Silahkan Pilih Produk Yang Tersedia
-Dibawah Ini
-  `
-
-  const keyboard = Markup.inlineKeyboard([
-
-    [
-      Markup.button.callback("🛍 Buy Produk", "produk"),
-      Markup.button.callback("🖥 Buy VPS", "vps")
-    ],
-
-    [
-      Markup.button.callback("💎 Buy Panel", "panel")
-    ],
-
-    [
-      Markup.button.callback("📂 Buy Scripts", "script"),
-      Markup.button.callback("📱 Buy App Prem", "prem")
-    ],
-
-    [
-      Markup.button.callback("Admin Contact", "owner"),
-    ]
-
-  ])
-
-  if (ctx.callbackQuery) {
-    await ctx.editMessageMedia(
-      {
-        type: "photo",
-        media: START_IMAGE_URL,
-        caption,
-        parse_mode: "Markdown"
-      },
-      {
-        reply_markup: keyboard.reply_markup
-      }
-    )
-  } else {
-    await ctx.replyWithPhoto(
-      START_IMAGE_URL,
-      {
-        caption,
-        parse_mode: "Markdown",
-        ...keyboard
-      }
-    )
-  }
-}
 bot.start(async (ctx) => {
-  await startCmd(ctx)
+  await menu(ctx, Markup, START_IMAGE_URL)
 })
 
 bot.command('menu', async (ctx) => {
-  await startCmd(ctx)
+  await menu(ctx, Markup, START_IMAGE_URL)
 })
 
 bot.on("callback_query", async (ctx) => {
@@ -119,89 +35,21 @@ bot.on("callback_query", async (ctx) => {
 
     case "produk":
       await ctx.answerCbQuery("Menu Produk")
+      await product(ctx)
     break
 
     case "panel":
-      await ctx.answerCbQuery("Menu Panel")
-      case "panel":
-  await ctx.answerCbQuery("Menu Panel")
-
-  await ctx.editMessageReplyMarkup({
-    inline_keyboard: [
-      [
-        {
-          text: "📦 Panel Legal",
-          callback_data: "panel_legal"
-        }
-      ],
-      [
-        {
-          text: "📦 Panel Biasa",
-          callback_data: "panel_biasa"
-        }
-      ],
-      [
-        {
-          text: "Back",
-          callback_data: "menu"
-        }
-      ]
-    ]
-  })
+      await panel(ctx)
     break
     
     case "panel_legal": {
-      await ctx.editMessageReplyMarkup({
-    inline_keyboard: [
-      [
-        {
-          text: "📦 Buy Panel Legal",
-          callback_data: "buy_panel_legal"
-        }
-      ],
-      [
-        {
-          text: "📦 Buy Admin Panel Legal",
-          callback_data: "buy_admin_panel_legal"
-        }
-      ],
-            [
-        {
-          text: "📦 Buy Reseller Legal",
-          callback_data: "buy_reseller_legal"
-        }
-      ],
-      [
-        {
-          text: "Back",
-          callback_data: "panel"
-        }
-      ]
-    ]
-  })
+      await panelLegal(ctx)
     }
     break
     
     case "buy_panel_legal":
-
-  session[ctx.from.id] = {
-    action: "buy_panel_legal"
-  }
-
-  await ctx.reply("Masukkan username panel:", {
-  reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: "Batalkan",
-                callback_data: "menu"
-              }
-            ]
-          ],
-        }
-  })
-
-break
+    await buyFormPanelLegal(ctx, session)
+    break
     
     case "script":
       await ctx.answerCbQuery("Menu Script")
@@ -218,56 +66,7 @@ break
     case "9gb":
     case "unli":
 
-      const id = ctx.from.id
-      const username = session[id]?.username
-
-      if (!username) {
-        return ctx.reply("Username tidak ditemukan")
-      }
-
-      const amount = prices[data]
-
-      await ctx.answerCbQuery("Membuat pembayaran...")
-
-      const pay = await payment.create(amount)
-
-      if (!pay.success) {
-        return ctx.reply(pay.message)
-      }
       
-      await ctx.editMessageText("Memproses Pembayaran")
-
-      const buffer = Buffer.from(
-        pay.qr.replace(/^data:image\/png;base64,/, ""),
-        "base64"
-      )
-
-      await ctx.replyWithPhoto(
-        { source: buffer },
-        {
-          caption: `
-🧾 Invoice: ${pay.invoice}
-👤 Username: ${username}
-📦 Paket: ${data}
-💰 Amount: Rp${pay.amount}
-⏰ Expired: ${pay.expired}
-          `,
-          ...Markup.inlineKeyboard([
-            [
-              Markup.button.callback(
-                "Check Status",
-                `cek_${pay.invoice}`
-              )
-            ],
-            [
-              Markup.button.callback(
-                "Batalkan",
-                "menu"
-              )
-            ]
-          ])
-        }
-      )
 
     break
 
@@ -283,9 +82,10 @@ break
       await ctx.answerCbQuery("contact owner")
     break
     
+    
     case "menu": {
       await ctx.answerCbQuery("Menu")
-      await startCmd(ctx)
+      await menu(ctx, Markup, START_IMAGE_URL)
     }
     break
 
@@ -415,7 +215,6 @@ bot.on("text", async (ctx) => {
     break
   }
 })
-
 
 
 
