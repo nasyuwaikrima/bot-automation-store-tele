@@ -6,12 +6,18 @@ const {
   panel,
   product,
   buyFormPanelLegal,
+  buyFormAdpLegal,
   panelbiasa,
   buyFormPanelbiasa,
   buyPanelLegal,
   buyPanelLegalOnText,
   buyPanelbiasaOnText,
-  buyPanelbiasa
+  buyPanelbiasa,
+  buyAdpLegal,
+  buyAdpLegalOnText,
+  buyFormAdpbiasa,
+  buyAdpbiasaOnText,
+  buyAdpbiasa
 } = require('./lib/module.components')
 
 const bot = new Telegraf(BOT_TOKEN);
@@ -64,10 +70,43 @@ bot.on("callback_query", async (ctx) => {
     await buyFormPanelLegal(ctx, session)
     break
     
+    case "buy_adp_legal": {
+      await buyFormAdpLegal(ctx, session)
+    }
+    
+    case "buy_adp_biasa": {
+      await buyFormAdpbiasa(ctx, session)
+    }
+    
+    break
+    
     case "panel_biasa": {
-      await panelbiasa(ctx)
+     return await panelbiasa(ctx)
     }
     break
+    
+    case "buy_adp_biasas": {
+      const id = ctx.from.id
+
+
+  if (!session[id]) return
+  
+  await buyAdpbiasa(ctx, session, Markup)
+    }
+    
+    break
+    
+    case "buy_adp_legals": {
+      const id = ctx.from.id
+
+
+  if (!session[id]) return
+  
+  await buyAdpLegal(ctx, session, Markup)
+    }
+    
+    break
+    
     
     case "buy_panel_biasa":
     await buyFormPanelbiasa(ctx, session)
@@ -241,6 +280,17 @@ bot.on("text", async (ctx) => {
     case "buy_panel_biasa": {
 
       await buyPanelbiasaOnText(ctx, session)
+    }
+    break
+    case "buy_adp_legal": {
+      await buyAdpLegalOnText(ctx, session)
+
+    }
+    break
+    
+    case "buy_adp_biasa": {
+      await buyAdpbiasaOnText(ctx, session)
+
     }
     break
   }
