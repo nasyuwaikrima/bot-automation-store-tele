@@ -171,6 +171,105 @@ break
       await menu(ctx, Markup, START_IMAGE_URL)
     }
     break
+    
+    case "setting_panel": {
+
+  await ctx.reply(
+    "SETTING PANEL\n\nPilih panel.",
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: "PANEL LEGAL", callback_data: "setting_legal" }
+          ],
+          [
+            { text: "PANEL BIASA", callback_data: "setting_biasa" }
+          ]
+        ]
+      }
+    }
+  )
+
+}
+break
+
+case "setting_panel_legal": {
+
+  await ctx.reply(
+    "SETTING PANEL LEGAL",
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: "SET API", callback_data: "set_api_legal" },
+            { text: "SET URL", callback_data: "set_url_legal" }
+          ]
+        ]
+      }
+    }
+  )
+
+}
+break
+
+case "setting_panel_biasa": {
+
+  await ctx.reply(
+    "SETTING PANEL BIASA",
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: "SET API", callback_data: "set_api_biasa" },
+            { text: "SET URL", callback_data: "set_url_biasa" }
+          ]
+        ]
+      }
+    }
+  )
+
+}
+break
+
+case "set_api_legal": {
+
+  session[ctx.from.id] = {
+    action: "set_api_legal"
+  }
+
+  await ctx.reply("Kirim API panel legal.")
+}
+break
+
+case "set_url_legal": {
+
+  session[ctx.from.id] = {
+    action: "set_url_legal"
+  }
+
+  await ctx.reply("Kirim URL panel legal.")
+}
+break
+
+case "set_api_biasa": {
+
+  session[ctx.from.id] = {
+    action: "set_api_biasa"
+  }
+
+  await ctx.reply("Kirim API panel biasa.")
+}
+break
+
+case "set_url_biasa": {
+
+  session[ctx.from.id] = {
+    action: "set_url_biasa"
+  }
+
+  await ctx.reply("Kirim URL panel biasa.")
+}
+break
 
   }
 
@@ -264,6 +363,32 @@ bot.action(/^cek_(.+)$/, async (ctx) => {
 
 });
 
+bot.command("settingpanel", async (ctx) => {
+
+  await ctx.reply(
+    "SETTING PANEL\n\nPilih panel yang mau diatur.",
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "PANEL LEGAL",
+              callback_data: "setting_panel_legal"
+            }
+          ],
+          [
+            {
+              text: "PANEL BIASA",
+              callback_data: "setting_panel_biasa"
+            }
+          ]
+        ]
+      }
+    }
+  )
+
+})
+
 bot.on("text", async (ctx) => {
   const id = ctx.from.id
 
@@ -293,9 +418,86 @@ bot.on("text", async (ctx) => {
 
     }
     break
+    
+    case "set_api_legal": {
+
+  configPanel.panel_legal.api = ctx.message.text
+
+  fs.writeFileSync(
+    "./config.json",
+    JSON.stringify(configPanel, null, 2)
+  )
+
+  delete session[id]
+
+  await ctx.reply("API panel legal berhasil disimpan.")
+}
+break
+
+case "set_url_legal": {
+
+  configPanel.panel_legal.url = ctx.message.text
+
+  fs.writeFileSync(
+    "./config.json",
+    JSON.stringify(configPanel, null, 2)
+  )
+
+  delete session[id]
+
+  await ctx.reply("URL panel legal berhasil disimpan.")
+}
+break
+
+case "set_api_biasa": {
+
+  configPanel.panel_biasa.api = ctx.message.text
+
+  fs.writeFileSync(
+    "./config.json",
+    JSON.stringify(configPanel, null, 2)
+  )
+
+  delete session[id]
+
+  await ctx.reply("API panel biasa berhasil disimpan.")
+}
+break
+
+case "set_url_biasa": {
+
+  configPanel.panel_biasa.url = ctx.message.text
+
+  fs.writeFileSync(
+    "./config.json",
+    JSON.stringify(configPanel, null, 2)
+  )
+
+  delete session[id]
+
+  await ctx.reply("URL panel biasa berhasil disimpan.")
+}
+break
   }
 })
+const fs = require("fs")
 
+if (!fs.existsSync("./config.json")) {
+
+  fs.writeFileSync("./config.json", JSON.stringify({
+    panel_legal: {
+      api: "",
+      url: ""
+    },
+    panel_biasa: {
+      api: "",
+      url: ""
+    }
+  }, null, 2))
+
+}
+
+const configPanel = require("./config.json")
 
 
 bot.launch();
