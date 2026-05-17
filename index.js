@@ -532,7 +532,58 @@ bot.command("addprem", async (ctx) => {
 
 })
 
-const packages = {
+bot.command("delowner", async (ctx) => {
+  if (String(ctx.from.id) !== String(OWNER_ID)) {
+    return ctx.reply("Khusus owner utama.")
+  }
+
+  const input = ctx.message.text.split(" ")[1]
+
+  if (!input) {
+    return ctx.reply("Contoh:\n/delowner 123456")
+  }
+
+  if (!db.owner.includes(input)) {
+    return ctx.reply("User bukan owner.")
+  }
+
+  db.owner = db.owner.filter(id => id !== input)
+
+  fs.writeFileSync(
+    "./database.json",
+    JSON.stringify(db, null, 2)
+  )
+
+  ctx.reply(`Berhasil hapus owner:\n${input}`)
+})
+
+
+bot.command("delprem", async (ctx) => {
+  if (String(ctx.from.id) !== String(OWNER_ID)) {
+    return ctx.reply("Khusus owner utama.")
+  }
+
+  const input = ctx.message.text.split(" ")[1]
+
+  if (!input) {
+    return ctx.reply("Contoh:\n/delprem 123456")
+  }
+
+  if (!db.premium.includes(input)) {
+    return ctx.reply("User bukan premium.")
+  }
+
+  db.premium = db.premium.filter(id => id !== input)
+
+  fs.writeFileSync(
+    "./database.json",
+    JSON.stringify(db, null, 2)
+  )
+
+  ctx.reply(`Berhasil hapus premium:\n${input}`)
+})
+
+const ackages = {
   "1gb": { ram: 1000, disk: 1000, cpu: 40 },
   "2gb": { ram: 2000, disk: 2000, cpu: 60 },
   "3gb": { ram: 3000, disk: 3000, cpu: 80 },
