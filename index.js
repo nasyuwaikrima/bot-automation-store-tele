@@ -34,7 +34,13 @@ const {
 } = require("./lib/buyscript")
 
 //const input = ctx.message.text.split(' ').slice(1).join(' ').trim();
+const config = require("./config.json")
 
+const apiLegal = config.panel_legal.api
+const urlLegal = config.panel_legal.url
+
+const apiBiasa = config.panel_biasa.api
+const urlBiasa = config.panel_biasa.url
 console.log("bot aktif")
 // /start — support grup & pribadi + font stylish
 
@@ -562,13 +568,13 @@ async function createPanel(ctx, paket) {
   // ======================
 
   const createUser = await fetch(
-    "https://alluffystore.alluffystore.my.id/api/application/users",
+    `${urlBiasa}/api/application/users`,
     {
       method: "POST",
       headers: {
         "Accept": "application/json",
         "Content-Type": "application/json",
-        "Authorization": "Bearer ptla_u6FGXOhvWXwKsDbRnLshR3n3Qh78j5jweickYH2fkvP"
+        "Authorization": `Bearer ${apiBiasa}`
       },
       body: JSON.stringify({
         email,
@@ -596,13 +602,13 @@ async function createPanel(ctx, paket) {
   // ======================
 
   const createServer = await fetch(
-    "https://alluffystore.alluffystore.my.id/api/application/servers",
+    `${urlBiasa}/api/application/servers`,
     {
       method: "POST",
       headers: {
         "Accept": "application/json",
         "Content-Type": "application/json",
-        "Authorization": "Bearer ptla_u6FGXOhvWXwKsDbRnLshR3n3Qh78j5jweickYH2fkvP"
+        "Authorization": `Bearer ${apiBiasa}`
       },
       body: JSON.stringify({
         name: username,
@@ -665,8 +671,7 @@ async function createPanel(ctx, paket) {
 💾 Disk: ${disk === 0 ? "Unlimited" : disk + " MB"}
 ⚡ CPU: ${cpu === 0 ? "Unlimited" : cpu + "%"}
 
-🌐 Login:
-https://alluffystore.alluffystore.my.id`
+🌐 Login: ${urlBiasa}`
   )
 }
 
@@ -706,13 +711,13 @@ async function createPanelV2(ctx, paket) {
   // ======================
 
   const createUser = await fetch(
-    "https://alluffystore.alluffystore.my.id/api/application/users",
+    `${urlLegal}/api/application/users`,
     {
       method: "POST",
       headers: {
         "Accept": "application/json",
         "Content-Type": "application/json",
-        "Authorization": "Bearer ptla_u6FGXOhvWXwKsDbRnLshR3n3Qh78j5jweickYH2fkvP"
+        "Authorization": `Bearer ${apiLegal}`
       },
       body: JSON.stringify({
         email,
@@ -740,13 +745,13 @@ async function createPanelV2(ctx, paket) {
   // ======================
 
   const createServer = await fetch(
-    "https://alluffystore.alluffystore.my.id/api/application/servers",
+    `${urlLegal}/api/application/servers`,
     {
       method: "POST",
       headers: {
         "Accept": "application/json",
         "Content-Type": "application/json",
-        "Authorization": "Bearer ptla_u6FGXOhvWXwKsDbRnLshR3n3Qh78j5jweickYH2fkvP"
+        "Authorization": `Bearer ${apiLegal}`
       },
       body: JSON.stringify({
         name: username,
@@ -809,8 +814,7 @@ async function createPanelV2(ctx, paket) {
 💾 Disk: ${disk === 0 ? "Unlimited" : disk + " MB"}
 ⚡ CPU: ${cpu === 0 ? "Unlimited" : cpu + "%"}
 
-🌐 Login:
-https://alluffystore.alluffystore.my.id`
+🌐 Login: ${urlLegal}`
   )
 }
 
