@@ -1,5 +1,6 @@
 const { Telegraf, Markup } = require('telegraf');
-const { BOT_TOKEN, REQUIRED_CHANNEL, START_IMAGE_URL, OWNER_ID } = require('./config');
+const { BOT_TOKEN, REQUIRED_CHANNEL, START_IMAGE_URL, OWNER_ID, AUTO_BACKUP } = require('./config');
+const { backupBot } = require("./lib/backup")
 const {
   panelLegal,
   menu,
@@ -20,10 +21,17 @@ const {
   buyAdpbiasa
 } = require('./lib/module.components')
 
+const fs = require("fs");
+const path = require("path");
+const https = require("https");
+
 const bot = new Telegraf(BOT_TOKEN);
 
 const session = {}
-
+const {
+  buyScriptMenu,
+  buyScript
+} = require("./lib/buyscript")
 
 //const input = ctx.message.text.split(' ').slice(1).join(' ').trim();
 
@@ -42,6 +50,12 @@ bot.command('menu', async (ctx) => {
 bot.on("callback_query", async (ctx) => {
 
   const data = ctx.callbackQuery.data
+if (data.startsWith("buy_script_")) {
+
+  const fileName = data.replace("buy_script_", "")
+
+  await buyScript(ctx, fileName, Markup)
+}
 
   switch (data) {
 
@@ -363,7 +377,14 @@ bot.action(/^cek_(.+)$/, async (ctx) => {
 
 });
 
+bot.command("buyscript", async (ctx) => {
+  await buyScriptMenu(ctx, Markup)
+})
+
 bot.command("settingpanel", async (ctx) => {
+  if (String(ctx.from.id) !== String(OWNER_ID)) {
+  return ctx.reply("Khusus owner utama.")
+}
 
   await ctx.reply(
     "SETTING PANEL\n\nPilih panel yang mau diatur.",
@@ -388,6 +409,278 @@ bot.command("settingpanel", async (ctx) => {
   )
 
 })
+
+bot.command("backup", async (ctx) => {
+
+  if (String(ctx.from.id) !== String(OWNER_ID)) {
+    return ctx.reply("Lu siapa anjir")
+  }
+
+  await ctx.reply("Sedang backup...")
+
+  const file = await backupBot()
+
+  await ctx.replyWithDocument({
+    source: file
+  })
+
+})
+
+bot.command("addscript", async (ctx) => {
+  const id = ctx.from.id
+
+  if (id != OWNER_ID) {
+    return ctx.reply("Lu siapa nyet")
+  }
+
+  session[id] = {
+    action: "add_script"
+  }
+
+  ctx.reply("Kirim file zip script sekarang")
+})
+
+bot.on("document", async (ctx) => {
+  const id = ctx.from.id
+
+  if (id != OWNER_ID) return
+
+  if (!session[id]) return
+
+  if (session[id].action !== "add_script") return
+
+  const file = ctx.message.document
+
+  if (!file.file_name.endsWith(".zip")) {
+    return ctx.reply("Harus file zip goblok")
+  }
+
+  const fileLink = await ctx.telegram.getFileLink(file.file_id)
+
+  const filePath = path.join(__dirname, "script", file.file_name)
+
+  https.get(fileLink.href, (res) => {
+    const stream = fs.createWriteStream(filePath)
+
+    res.pipe(stream)
+
+    stream.on("finish", () => {
+      stream.close()
+
+      delete session[id]
+
+      ctx.reply(`Script berhasil disimpan:\n${file.file_name}`)
+    })
+  })
+})
+
+bot.command("addowner", async (ctx) => {
+  if (String(ctx.from.id) !== String(OWNER_ID)) {
+  return ctx.reply("Khusus owner utama.")
+}
+
+  const input = ctx.message.text.split(" ")[1]
+
+  if (!input) {
+    return ctx.reply("Contoh:\n/addowner 123456")
+  }
+
+  if (db.owner.includes(input)) {
+    return ctx.reply("User sudah jadi owner.")
+  }
+
+  db.owner.push(input)
+
+  fs.writeFileSync(
+    "./database.json",
+    JSON.stringify(db, null, 2)
+  )
+
+  ctx.reply(`Berhasil tambah owner:\n${input}`)
+
+})
+
+bot.command("addprem", async (ctx) => {
+  if (String(ctx.from.id) !== String(OWNER_ID)) {
+  return ctx.reply("Khusus owner utama.")
+}
+
+  const input = ctx.message.text.split(" ")[1]
+
+  if (!input) {
+    return ctx.reply("Contoh:\n/addprem 123456")
+  }
+
+  if (db.premium.includes(input)) {
+    return ctx.reply("User sudah premium.")
+  }
+
+  db.premium.push(input)
+
+  fs.writeFileSync(
+    "./database.json",
+    JSON.stringify(db, null, 2)
+  )
+
+  ctx.reply(`Berhasil tambah premium:\n${input}`)
+
+})
+
+const packages = {
+  "1gb": { ram: 1000, disk: 1000, cpu: 40 },
+  "2gb": { ram: 2000, disk: 2000, cpu: 60 },
+  "3gb": { ram: 3000, disk: 3000, cpu: 80 },
+  "4gb": { ram: 4000, disk: 4000, cpu: 100 },
+  "5gb": { ram: 5000, disk: 5000, cpu: 120 },
+  "6gb": { ram: 6000, disk: 6000, cpu: 140 },
+  "7gb": { ram: 7000, disk: 7000, cpu: 160 },
+  "8gb": { ram: 8000, disk: 8000, cpu: 180 },
+  "9gb": { ram: 9000, disk: 9000, cpu: 200 },
+  "unli": { ram: 0, disk: 0, cpu: 0 }
+}
+
+async function createPanel(ctx, paket) {
+
+  if (String(ctx.from.id) !== String(OWNER_ID)) {
+    return ctx.reply("Khusus owner utama.")
+  }
+
+  const args = ctx.message.text.split(" ")
+  const username = args[1]
+
+  if (!username) {
+    return ctx.reply(`Contoh:\n/${paket} nasyuwa`)
+  }
+
+  const email = `${username}@gmail.com`
+  const password = `${username}001`
+
+  const { ram, disk, cpu } = packages[paket]
+
+  // ======================
+  // CREATE USER
+  // ======================
+
+  const createUser = await fetch(
+    "https://alluffystore.alluffystore.my.id/api/application/users",
+    {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "Bearer ptla_u6FGXOhvWXwKsDbRnLshR3n3Qh78j5jweickYH2fkvP"
+      },
+      body: JSON.stringify({
+        email,
+        username,
+        first_name: username,
+        last_name: "Server",
+        language: "en",
+        password
+      })
+    }
+  )
+
+  const dataUser = await createUser.json()
+
+  if (dataUser.errors) {
+    return ctx.reply(
+      `❌ Gagal create user\n${dataUser.errors[0].detail}`
+    )
+  }
+
+  const userId = dataUser.attributes.id
+
+  // ======================
+  // CREATE SERVER
+  // ======================
+
+  const createServer = await fetch(
+    "https://alluffystore.alluffystore.my.id/api/application/servers",
+    {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "Bearer ptla_u6FGXOhvWXwKsDbRnLshR3n3Qh78j5jweickYH2fkvP"
+      },
+      body: JSON.stringify({
+        name: username,
+        user: userId,
+        egg: 15,
+        docker_image: "ghcr.io/parkervcp/yolks:nodejs_20",
+        startup: "npm start",
+
+        environment: {
+          INST: "npm",
+          USER_UPLOAD: "0",
+          AUTO_UPDATE: "0",
+          CMD_RUN: "npm start"
+        },
+
+        limits: {
+          memory: ram,
+          swap: 0,
+          disk: disk,
+          io: 500,
+          cpu: cpu
+        },
+
+        feature_limits: {
+          databases: 5,
+          backups: 5,
+          allocations: 5
+        },
+
+        deploy: {
+          locations: [1],
+          dedicated_ip: false,
+          port_range: []
+        }
+      })
+    }
+  )
+
+  const dataServer = await createServer.json()
+
+  if (dataServer.errors) {
+    return ctx.reply(
+      `❌ Gagal create server\n${dataServer.errors[0].detail}`
+    )
+  }
+
+  const server = dataServer.attributes
+
+  ctx.reply(
+`✅ PANEL BERHASIL DIBUAT
+
+🆔 Server ID: ${server.id}
+
+👤 Username: ${username}
+🔑 Password: ${password}
+
+📦 Paket: ${paket}
+
+🧠 RAM: ${ram === 0 ? "Unlimited" : ram + " MB"}
+💾 Disk: ${disk === 0 ? "Unlimited" : disk + " MB"}
+⚡ CPU: ${cpu === 0 ? "Unlimited" : cpu + "%"}
+
+🌐 Login:
+https://alluffystore.alluffystore.my.id`
+  )
+}
+
+// COMMAND
+bot.command("1gb", (ctx) => createPanel(ctx, "1gb"))
+bot.command("2gb", (ctx) => createPanel(ctx, "2gb"))
+bot.command("3gb", (ctx) => createPanel(ctx, "3gb"))
+bot.command("4gb", (ctx) => createPanel(ctx, "4gb"))
+bot.command("5gb", (ctx) => createPanel(ctx, "5gb"))
+bot.command("6gb", (ctx) => createPanel(ctx, "6gb"))
+bot.command("7gb", (ctx) => createPanel(ctx, "7gb"))
+bot.command("8gb", (ctx) => createPanel(ctx, "8gb"))
+bot.command("9gb", (ctx) => createPanel(ctx, "9gb"))
+bot.command("unli", (ctx) => createPanel(ctx, "unli"))
 
 bot.on("text", async (ctx) => {
   const id = ctx.from.id
@@ -480,7 +773,7 @@ case "set_url_biasa": {
 break
   }
 })
-const fs = require("fs")
+
 
 if (!fs.existsSync("./config.json")) {
 
@@ -498,6 +791,52 @@ if (!fs.existsSync("./config.json")) {
 }
 
 const configPanel = require("./config.json")
+
+
+setInterval(async () => {
+
+  try {
+
+    const file = await backupBot()
+
+    await bot.telegram.sendDocument(
+      OWNER_ID,
+      {
+        source: file
+      },
+      {
+        caption: "Auto backup berhasil."
+      }
+    )
+
+  } catch (err) {
+
+    console.log(err)
+
+  }
+
+}, AUTO_BACKUP * 60 * 60 * 1000)
+
+
+if (!fs.existsSync("./script")) {
+  fs.mkdirSync("./script");
+}
+
+
+// ===============================
+// CREATE DATABASE
+// ===============================
+
+if (!fs.existsSync("./database.json")) {
+
+  fs.writeFileSync("./database.json", JSON.stringify({
+    owner: [],
+    premium: []
+  }, null, 2))
+
+}
+
+const db = require("./database.json")
 
 
 bot.launch();
