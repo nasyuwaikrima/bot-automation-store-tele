@@ -682,6 +682,150 @@ bot.command("8gb", (ctx) => createPanel(ctx, "8gb"))
 bot.command("9gb", (ctx) => createPanel(ctx, "9gb"))
 bot.command("unli", (ctx) => createPanel(ctx, "unli"))
 
+
+async function createPanelV2(ctx, paket) {
+
+  if (String(ctx.from.id) !== String(OWNER_ID)) {
+    return ctx.reply("Khusus owner utama.")
+  }
+
+  const args = ctx.message.text.split(" ")
+  const username = args[1]
+
+  if (!username) {
+    return ctx.reply(`Contoh:\n/${paket} nasyuwa`)
+  }
+
+  const email = `${username}@gmail.com`
+  const password = `${username}001`
+
+  const { ram, disk, cpu } = packages[paket]
+
+  // ======================
+  // CREATE USER
+  // ======================
+
+  const createUser = await fetch(
+    "https://alluffystore.alluffystore.my.id/api/application/users",
+    {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "Bearer ptla_u6FGXOhvWXwKsDbRnLshR3n3Qh78j5jweickYH2fkvP"
+      },
+      body: JSON.stringify({
+        email,
+        username,
+        first_name: username,
+        last_name: "Server",
+        language: "en",
+        password
+      })
+    }
+  )
+
+  const dataUser = await createUser.json()
+
+  if (dataUser.errors) {
+    return ctx.reply(
+      `❌ Gagal create user\n${dataUser.errors[0].detail}`
+    )
+  }
+
+  const userId = dataUser.attributes.id
+
+  // ======================
+  // CREATE SERVER
+  // ======================
+
+  const createServer = await fetch(
+    "https://alluffystore.alluffystore.my.id/api/application/servers",
+    {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "Bearer ptla_u6FGXOhvWXwKsDbRnLshR3n3Qh78j5jweickYH2fkvP"
+      },
+      body: JSON.stringify({
+        name: username,
+        user: userId,
+        egg: 15,
+        docker_image: "ghcr.io/parkervcp/yolks:nodejs_20",
+        startup: "npm start",
+
+        environment: {
+          INST: "npm",
+          USER_UPLOAD: "0",
+          AUTO_UPDATE: "0",
+          CMD_RUN: "npm start"
+        },
+
+        limits: {
+          memory: ram,
+          swap: 0,
+          disk: disk,
+          io: 500,
+          cpu: cpu
+        },
+
+        feature_limits: {
+          databases: 5,
+          backups: 5,
+          allocations: 5
+        },
+
+        deploy: {
+          locations: [1],
+          dedicated_ip: false,
+          port_range: []
+        }
+      })
+    }
+  )
+
+  const dataServer = await createServer.json()
+
+  if (dataServer.errors) {
+    return ctx.reply(
+      `❌ Gagal create server\n${dataServer.errors[0].detail}`
+    )
+  }
+
+  const server = dataServer.attributes
+
+  ctx.reply(
+`✅ PANEL BERHASIL DIBUAT
+
+🆔 Server ID: ${server.id}
+
+👤 Username: ${username}
+🔑 Password: ${password}
+
+📦 Paket: ${paket}
+
+🧠 RAM: ${ram === 0 ? "Unlimited" : ram + " MB"}
+💾 Disk: ${disk === 0 ? "Unlimited" : disk + " MB"}
+⚡ CPU: ${cpu === 0 ? "Unlimited" : cpu + "%"}
+
+🌐 Login:
+https://alluffystore.alluffystore.my.id`
+  )
+}
+
+// COMMAND
+bot.command("1gbv2", (ctx) => createPanelV2l(ctx, "1gb"))
+bot.command("2gbv2", (ctx) => createPanelV2(ctx, "2gb"))
+bot.command("3gbv2", (ctx) => createPanelV2(ctx, "3gb"))
+bot.command("4gbv2", (ctx) => createPanelV2(ctx, "4gb"))
+bot.command("5gbv2", (ctx) => createPanelV2(ctx, "5gb"))
+bot.command("6gbv2", (ctx) => createPanelV2(ctx, "6gb"))
+bot.command("7gbv2", (ctx) => createPanelV2(ctx, "7gb"))
+bot.command("8gbv2", (ctx) => createPanelV2(ctx, "8gb"))
+bot.command("9gbv2", (ctx) => createPanelV2(ctx, "9gb"))
+bot.command("unliv2", (ctx) => createPanelV2(ctx, "unli"))
+
 bot.on("text", async (ctx) => {
   const id = ctx.from.id
 
